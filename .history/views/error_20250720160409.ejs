@@ -1,0 +1,12 @@
+<%- include('layout', { title: '错误页面', body: `
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="text-center">
+            <h1 class="display-1 text-muted">404</h1>
+            <h2 class="mb-4">页面未找到</h2>
+            <p class="lead"><%= message || '抱歉，您访问的页面不存在。' %></p>
+            <a href="/" class="btn btn-primary">返回首页</a>
+        </div>
+    </div>
+</div>
+` }) %>

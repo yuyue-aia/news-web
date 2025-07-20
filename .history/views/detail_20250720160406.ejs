@@ -1,0 +1,68 @@
+<%- include('layout', { title: news.title, body: `
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">首页</a></li>
+                <li class="breadcrumb-item active" aria-current="page">新闻详情</li>
+            </ol>
+        </nav>
+        
+        <article class="news-detail">
+            <header class="mb-4">
+                <h1 class="display-5 mb-3"><%= news.title %></h1>
+                <div class="news-meta d-flex flex-wrap gap-3 mb-3">
+                    <span class="badge bg-primary fs-6"><%= news.blog_type %></span>
+                    <span class="text-muted">作者: <%= news.author %></span>
+                    <span class="text-muted">发布时间: <%= moment(news.publish_date).format('YYYY年MM月DD日 HH:mm') %></span>
+                    <span class="text-muted">来源类型: <%= news.source_type %></span>
+                </div>
+            </header>
+            
+            <% if (news.ai_summary) { %>
+                <div class="alert alert-info">
+                    <h5 class="alert-heading">AI摘要</h5>
+                    <p class="mb-0"><%= news.ai_summary %></p>
+                    <hr>
+                    <small class="text-muted">
+                        摘要生成时间: <%= moment(news.summary_generated_at).format('YYYY-MM-DD HH:mm:ss') %>
+                    </small>
+                </div>
+            <% } %>
+            
+            <div class="news-actions mb-4">
+                <% if (news.article_link) { %>
+                    <a href="<%= news.article_link %>" target="_blank" class="btn btn-outline-primary">
+                        查看原文 <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                <% } %>
+                <button class="btn btn-outline-secondary" onclick="history.back()">返回</button>
+            </div>
+            
+            <div class="news-stats mt-4 p-3 bg-light rounded">
+                <h6>文章统计信息</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">原文长度: <%= news.original_content_length %> 字符</small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">抓取时间: <%= moment(news.crawl_time).format('YYYY-MM-DD HH:mm:ss') %></small>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <small class="text-muted">内容哈希: <%= news.content_hash.substring(0, 16) %>...</small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">摘要状态: 
+                            <span class="badge <%= news.summary_status === 'success' ? 'bg-success' : 'bg-warning' %>">
+                                <%= news.summary_status %>
+                            </span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </div>
+</div>
+` }) %>

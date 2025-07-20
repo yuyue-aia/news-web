@@ -1,0 +1,89 @@
+/* 自定义样式 */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.card-title a {
+    color: #333;
+    text-decoration: none;
+}
+
+.card-title a:hover {
+    color: #0d6efd;
+}
+
+.news-detail {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.news-meta {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+}
+
+.news-actions {
+    border-top: 1px solid #eee;
+    padding-top: 1rem;
+}
+
+.pagination {
+    margin-top: 2rem;
+}
+
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+.news-stats {
+    font-size: 0.9rem;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    .display-5 {
+        font-size: 1.8rem;
+    }
+    
+    .news-meta {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+}
+
+/* 加载动画 */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
