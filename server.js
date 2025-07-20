@@ -7,9 +7,9 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3003;
 
-// MongoDB连接配置
-const MONGODB_URI = "mongodb://mongouser:Passwd2025@139.155.60.15:28017,139.155.60.15:28018/test?replicaSet=cmgo-pjr9kp6t_0&authSource=admin";
-const DB_NAME = process.env.DB_NAME || 'crawl';
+// MongoDB连接配置 - Clacky Environment
+const MONGODB_URI = process.env.MONGODB_URI || "mongodb://admin:dzXAsmSh@127.0.0.1:27017/admin";
+const DB_NAME = process.env.DB_NAME || 'news_db';
 const COLLECTION_NAME = 'news';
 
 let db;
@@ -42,27 +42,24 @@ async function connectDB() {
   }
 }
 
-// 首页路由 - 显示新闻列表
+// 首页路由 - 显示新闻列表（Feed流模式）
 app.get('/', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
+    const limit = 15; // 初始加载更多条目
     
     const news = await db.collection(COLLECTION_NAME)
       .find({})
       .sort({ publish_date: -1 })
-      .skip(skip)
       .limit(limit)
       .toArray();
     
     const totalNews = await db.collection(COLLECTION_NAME).countDocuments();
-    const totalPages = Math.ceil(totalNews / limit);
+    const hasMore = news.length === limit && totalNews > limit;
     
     res.render('index', {
       news,
-      currentPage: page,
-      totalPages,
+      hasMore,
+      totalNews,
       moment
     });
   } catch (error) {
@@ -71,29 +68,7 @@ app.get('/', async (req, res) => {
   }
 });
 
-// 新闻详情页路由
-app.get('/news/:id', async (req, res) => {
-  try {
-    const { ObjectId } = require('mongodb');
-    const newsId = req.params.id;
-    
-    if (!ObjectId.isValid(newsId)) {
-      return res.status(404).render('error', { message: '新闻不存在' });
-    }
-    
-    const news = await db.collection(COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(newsId) });
-    
-    if (!news) {
-      return res.status(404).render('error', { message: '新闻不存在' });
-    }
-    
-    res.render('detail', { news, moment });
-  } catch (error) {
-    console.error('获取新闻详情失败:', error);
-    res.status(500).render('error', { message: '服务器错误' });
-  }
-});
+
 
 // API路由 - 返回JSON格式的新闻数据
 app.get('/api/news', async (req, res) => {
@@ -133,29 +108,42 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
-// API路由 - 获取单条新闻
-app.get('/api/news/:id', async (req, res) => {
+// API路由 - Feed流无限滚动加载
+app.get('/api/news/feed', async (req, res) => {
   try {
-    const { ObjectId } = require('mongodb');
-    const newsId = req.params.id;
+    const offset = parseInt(req.query.offset) || 0;
+    const limit = parseInt(req.query.limit) || 10;
+    const blogType = req.query.blog_type;
     
-    if (!ObjectId.isValid(newsId)) {
-      return res.status(404).json({ success: false, message: '新闻不存在' });
+    let query = {};
+    if (blogType) {
+      query.blog_type = blogType;
     }
     
     const news = await db.collection(COLLECTION_NAME)
-      .findOne({ _id: new ObjectId(newsId) });
+      .find(query)
+      .sort({ publish_date: -1 })
+      .skip(offset)
+      .limit(limit)
+      .toArray();
     
-    if (!news) {
-      return res.status(404).json({ success: false, message: '新闻不存在' });
-    }
+    const total = await db.collection(COLLECTION_NAME).countDocuments(query);
+    const hasMore = (offset + news.length) < total;
     
-    res.json({ success: true, data: news });
+    res.json({
+      success: true,
+      data: news,
+      hasMore,
+      total,
+      nextOffset: offset + news.length
+    });
   } catch (error) {
-    console.error('API获取新闻详情失败:', error);
+    console.error('API获取Feed流新闻失败:', error);
     res.status(500).json({ success: false, message: '服务器错误' });
   }
 });
+
+
 
 // 代理路由 - 用于在iframe中展示原始文章内容
 app.get('/proxy', async (req, res) => {

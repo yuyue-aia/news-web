@@ -23,19 +23,18 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             backToTopBtn.style.display = 'none';
         }
+        
+        // 无限滚动检测
+        checkInfiniteScroll();
     });
 
-    // 卡片点击效果
-    document.querySelectorAll('.card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            if (e.target.tagName !== 'A') {
-                const link = this.querySelector('.card-title a');
-                if (link) {
-                    window.location.href = link.href;
-                }
-            }
-        });
-    });
+    // 卡片点击效果已移除（无详情页）
+    
+    // 初始化Feed流功能
+    initializeFeedStream();
+    
+    // 使用事件委托绑定摘要点击事件
+    setupSummaryEventDelegation();
 });
 
 // 创建返回顶部按钮
@@ -164,5 +163,265 @@ function toggleFullscreen() {
         iframe.style.height = `calc(100vh - ${headerHeight}px)`;
         
         fullscreenIcon.classList.replace('bi-arrows-fullscreen', 'bi-fullscreen-exit');
+    }
+}
+
+// ===== Feed流无限滚动功能 =====
+
+// 初始化Feed流功能
+function initializeFeedStream() {
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    
+    if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', loadMoreNews);
+    }
+    
+    // 检查是否在首页（只在首页启用无限滚动）
+    if (window.location.pathname === '/' && window.feedState) {
+        console.log('Feed流初始化完成', window.feedState);
+    }
+}
+
+// 检查是否需要触发无限滚动
+function checkInfiniteScroll() {
+    // 只在首页且有feedState时执行
+    if (window.location.pathname !== '/' || !window.feedState) {
+        return;
+    }
+    
+    const { loading, hasMore } = window.feedState;
+    
+    // 如果正在加载或者没有更多内容，则不执行
+    if (loading || !hasMore) {
+        return;
+    }
+    
+    // 检查是否滚动到距离底部300px内
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    
+    if (scrollTop + windowHeight >= documentHeight - 300) {
+        loadMoreNews();
+    }
+}
+
+// 加载更多新闻
+function loadMoreNews() {
+    if (!window.feedState || window.feedState.loading || !window.feedState.hasMore) {
+        return;
+    }
+    
+    // 设置加载状态
+    window.feedState.loading = true;
+    
+    // 显示加载指示器
+    showLoadingIndicator();
+    
+    // 隐藏加载更多按钮
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+        loadMoreBtn.style.display = 'none';
+    }
+    
+    // 发起API请求
+    fetch(`/api/news/feed?offset=${window.feedState.currentOffset}&limit=${window.feedState.limit}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data.length > 0) {
+                // 渲染新新闻
+                appendNewsItems(data.data);
+                
+                // 更新状态
+                window.feedState.currentOffset = data.nextOffset;
+                window.feedState.hasMore = data.hasMore;
+                
+                // 如果还有更多内容，显示加载更多按钮
+                if (data.hasMore && loadMoreBtn) {
+                    loadMoreBtn.style.display = 'block';
+                } else {
+                    // 显示加载完成指示器
+                    showEndIndicator();
+                }
+            } else {
+                // 没有更多数据
+                window.feedState.hasMore = false;
+                showEndIndicator();
+            }
+        })
+        .catch(error => {
+            console.error('加载更多新闻失败:', error);
+            // 错误时显示加载更多按钮
+            if (loadMoreBtn) {
+                loadMoreBtn.style.display = 'block';
+            }
+        })
+        .finally(() => {
+            // 隐藏加载指示器
+            hideLoadingIndicator();
+            // 重置加载状态
+            window.feedState.loading = false;
+        });
+}
+
+// 添加新闻列表项
+function appendNewsItems(newsItems) {
+    const newsFeed = document.getElementById('news-feed');
+    if (!newsFeed) return;
+    
+    newsItems.forEach(article => {
+        const newsItem = createNewsItemElement(article);
+        newsFeed.appendChild(newsItem);
+        
+        // 添加入场动画
+        setTimeout(() => {
+            newsItem.classList.add('news-item-loaded');
+        }, 50);
+    });
+    
+    // 不需要重新绑定，事件委托会自动处理
+}
+
+// 创建新闻项元素
+function createNewsItemElement(article) {
+    const div = document.createElement('div');
+    div.className = 'col-12 news-item';
+    
+    const summaryButton = article.ai_summary ? `
+        <button type="button"
+                class="btn btn-link p-0 ms-3 summary-icon"
+                data-summary="${article.ai_summary.replace(/"/g, '&quot;')}"
+                title="查看 AI 摘要">
+            <i class="bi bi-stars fs-4"></i>
+        </button>
+    ` : '';
+    
+    const originalLink = article.article_link ? `
+        <a href="${article.article_link}" 
+           target="_blank" 
+           class="btn btn-link p-0 ms-2"
+           title="查看原文">
+            <i class="bi bi-box-arrow-up-right fs-5"></i>
+        </a>
+    ` : '';
+    
+    div.innerHTML = `
+        <div class="card flex-row align-items-center p-3" data-news-id="${article._id}">
+            <div class="flex-grow-1">
+                <h5 class="mb-1">${article.title}</h5>
+                <p class="text-muted small mb-0">
+                    <span class="badge bg-secondary me-2">${article.blog_type}</span>
+                    作者: ${article.author} |
+                    发布时间: ${formatDate(article.publish_date)}
+                </p>
+            </div>
+            <div class="d-flex align-items-center">
+                ${summaryButton}
+                ${originalLink}
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+// 设置摘要事件委托（统一处理所有摘要点击）
+function setupSummaryEventDelegation() {
+    // 使用事件委托在document上监听所有摘要点击
+    document.addEventListener('click', function(event) {
+        // 检查点击的元素是否是摘要按钮
+        if (event.target.closest('.summary-icon')) {
+            event.preventDefault();
+            const icon = event.target.closest('.summary-icon');
+            const card = icon.closest('.card');
+            const newsItem = card.closest('.news-item');
+            
+            // 使用data-news-id生成唯一ID
+            const newsCard = newsItem.querySelector('.card');
+            const newsId = newsCard ? newsCard.getAttribute('data-news-id') : Date.now();
+            const summaryId = `summary-${newsId}`;
+            
+            // 查找已存在的摘要行
+            const existingSummary = document.getElementById(summaryId);
+            
+            // 若摘要已存在则移除
+            if (existingSummary) {
+                existingSummary.remove();
+                return;
+            }
+            
+            // 创建新的摘要 DOM
+            const row = document.createElement('div');
+            row.id = summaryId;
+            row.className = 'summary-row col-12';
+            row.innerHTML = `
+                <div class="border-start border-3 border-primary bg-light p-3">
+                    <p class="mb-0">${icon.dataset.summary}</p>
+                </div>`;
+            
+            // 插入到当前新闻项之后
+            newsItem.parentNode.insertBefore(row, newsItem.nextSibling);
+        }
+    });
+}
+
+// 绑定摘要按钮事件（已废弃，使用事件委托替代）
+function bindSummaryEvents() {
+    document.querySelectorAll('.summary-icon:not(.bound)').forEach(icon => {
+        icon.classList.add('bound');
+        icon.addEventListener('click', () => {
+            const card = icon.closest('.card');
+            const newsItem = card.closest('.news-item');
+            
+            // 使用data-news-id生成唯一ID
+            const newsCard = newsItem.querySelector('.card');
+            const newsId = newsCard ? newsCard.getAttribute('data-news-id') : Date.now();
+            const summaryId = `summary-${newsId}`;
+            
+            // 查找已存在的摘要行
+            const existingSummary = document.getElementById(summaryId);
+            
+            // 若摘要已存在则移除
+            if (existingSummary) {
+                existingSummary.remove();
+                return;
+            }
+            
+            // 创建新的摘要 DOM
+            const row = document.createElement('div');
+            row.id = summaryId;
+            row.className = 'summary-row col-12';
+            row.innerHTML = `
+                <div class="border-start border-3 border-primary bg-light p-3">
+                    <p class="mb-0">${icon.dataset.summary}</p>
+                </div>`;
+            
+            // 插入到当前新闻项之后
+            newsItem.parentNode.insertBefore(row, newsItem.nextSibling);
+        });
+    });
+}
+
+// 显示加载指示器
+function showLoadingIndicator() {
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) {
+        indicator.style.display = 'block';
+    }
+}
+
+// 隐藏加载指示器
+function hideLoadingIndicator() {
+    const indicator = document.getElementById('loading-indicator');
+    if (indicator) {
+        indicator.style.display = 'none';
+    }
+}
+
+// 显示加载完成指示器
+function showEndIndicator() {
+    const indicator = document.getElementById('end-indicator');
+    if (indicator) {
+        indicator.style.display = 'block';
     }
 }
