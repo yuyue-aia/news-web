@@ -35,6 +35,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 使用事件委托绑定摘要点击事件
     setupSummaryEventDelegation();
+    
+    // 添加极客风格的键盘快捷键
+    setupKeyboardShortcuts();
+    
+    // 添加高级交互效果
+    setupAdvancedInteractions();
 });
 
 // 创建返回顶部按钮
@@ -424,4 +430,254 @@ function showEndIndicator() {
     if (indicator) {
         indicator.style.display = 'block';
     }
+}
+
+// ===== 极客风格的高级功能 =====
+
+// 设置键盘快捷键
+function setupKeyboardShortcuts() {
+    document.addEventListener('keydown', function(event) {
+        // 只在首页启用快捷键
+        if (window.location.pathname !== '/') return;
+        
+        // 避免在输入框中触发
+        if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+        
+        switch(event.key.toLowerCase()) {
+            case 'r': // R - 刷新页面
+                event.preventDefault();
+                location.reload();
+                break;
+                
+            case 'l': // L - 加载更多
+                event.preventDefault();
+                const loadMoreBtn = document.getElementById('load-more-btn');
+                if (loadMoreBtn && loadMoreBtn.style.display !== 'none') {
+                    loadMoreBtn.click();
+                }
+                break;
+                
+            case 't': // T - 返回顶部
+                event.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                break;
+                
+            case 'b': // B - 跳转到底部
+                event.preventDefault();
+                window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+                break;
+                
+            case '?': // ? - 显示帮助
+                event.preventDefault();
+                showKeyboardHelp();
+                break;
+        }
+    });
+}
+
+// 设置高级交互效果
+function setupAdvancedInteractions() {
+    // 添加视差滚动效果
+    setupParallaxEffect();
+    
+    // 添加鼠标跟随效果
+    setupMouseTracker();
+    
+    // 添加动态背景
+    setupDynamicBackground();
+}
+
+// 视差滚动效果
+function setupParallaxEffect() {
+    let ticking = false;
+    
+    function updateParallax() {
+        const scrolled = window.pageYOffset;
+        const parallax = scrolled * 0.3;
+        
+        document.body.style.backgroundPosition = `center ${parallax}px`;
+        ticking = false;
+    }
+    
+    window.addEventListener('scroll', function() {
+        if (!ticking) {
+            requestAnimationFrame(updateParallax);
+            ticking = true;
+        }
+    });
+}
+
+// 鼠标跟随效果
+function setupMouseTracker() {
+    const cursor = document.createElement('div');
+    cursor.className = 'geek-cursor';
+    cursor.style.cssText = `
+        position: fixed;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #00d9ff;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 9999;
+        transition: all 0.1s ease;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+    `;
+    document.body.appendChild(cursor);
+    
+    document.addEventListener('mousemove', function(e) {
+        cursor.style.left = e.clientX + 'px';
+        cursor.style.top = e.clientY + 'px';
+        cursor.style.opacity = '0.6';
+    });
+    
+    document.addEventListener('mouseleave', function() {
+        cursor.style.opacity = '0';
+    });
+    
+    // 悬停在可点击元素上时放大
+    document.addEventListener('mouseover', function(e) {
+        if (e.target.matches('button, a, .summary-icon')) {
+            cursor.style.transform = 'translate(-50%, -50%) scale(1.5)';
+            cursor.style.borderColor = '#ff6b35';
+        } else {
+            cursor.style.transform = 'translate(-50%, -50%) scale(1)';
+            cursor.style.borderColor = '#00d9ff';
+        }
+    });
+}
+
+// 动态背景效果
+function setupDynamicBackground() {
+    // 添加微妙的背景动画
+    const background = document.createElement('div');
+    background.className = 'dynamic-bg';
+    background.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0.03;
+        background-image: 
+            radial-gradient(circle at 25% 25%, #00d9ff 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, #ff6b35 0%, transparent 50%);
+        animation: backgroundPulse 8s ease-in-out infinite alternate;
+    `;
+    document.body.insertBefore(background, document.body.firstChild);
+}
+
+// 显示键盘帮助
+function showKeyboardHelp() {
+    const helpModal = document.createElement('div');
+    helpModal.className = 'keyboard-help-modal';
+    helpModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(10, 14, 39, 0.9);
+        backdrop-filter: blur(10px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    helpModal.innerHTML = `
+        <div style="
+            background: #252a48;
+            border: 1px solid #3c4563;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        ">
+            <h3 style="color: #00d9ff; font-family: 'JetBrains Mono', monospace; margin-bottom: 1.5rem; text-align: center;">
+                键盘快捷键
+            </h3>
+            <div style="color: #e8eaed; font-size: 0.9rem; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <kbd style="background: #3c4563; padding: 0.25rem 0.5rem; border-radius: 4px;">R</kbd>
+                    <span>刷新页面</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <kbd style="background: #3c4563; padding: 0.25rem 0.5rem; border-radius: 4px;">L</kbd>
+                    <span>加载更多</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <kbd style="background: #3c4563; padding: 0.25rem 0.5rem; border-radius: 4px;">T</kbd>
+                    <span>返回顶部</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                    <kbd style="background: #3c4563; padding: 0.25rem 0.5rem; border-radius: 4px;">B</kbd>
+                    <span>跳转底部</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                    <kbd style="background: #3c4563; padding: 0.25rem 0.5rem; border-radius: 4px;">?</kbd>
+                    <span>显示帮助</span>
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button onclick="this.closest('.keyboard-help-modal').remove()" style="
+                        background: #00d9ff;
+                        color: #0a0e27;
+                        border: none;
+                        padding: 0.5rem 1rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                    ">关闭</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(helpModal);
+    
+    // 点击背景关闭
+    helpModal.addEventListener('click', function(e) {
+        if (e.target === helpModal) {
+            helpModal.remove();
+        }
+    });
+    
+    // ESC 键关闭
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            helpModal.remove();
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
+}
+
+// 添加 CSS 动画
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    @keyframes backgroundPulse {
+        0% { transform: scale(1) rotate(0deg); }
+        100% { transform: scale(1.1) rotate(180deg); }
+    }
+    
+    /* 隐藏鼠标指针在此区域 */
+    .geek-cursor ~ * {
+        cursor: none;
+    }
+`;
+document.head.appendChild(style);
+
+// 由于鼠标跟随效果可能影响性能，添加开关
+if (window.innerWidth > 768) {
+    // 只在桌面端启用高级效果
+    document.body.classList.add('advanced-effects-enabled');
 }
