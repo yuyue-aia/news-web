@@ -1,3 +1,4 @@
+
 /* 基础样式 */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -7,9 +8,13 @@ body {
 }
 
 .navbar-brand {
-    font-weight: bold;
-    font-size: 1.5rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--text-accent) !important;
+  text-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
 }
+
 
 /* ===== 时间轴样式 ===== */
 
@@ -278,11 +283,14 @@ body {
     animation: spinner-border-animation 0.75s linear infinite;
 }
 
-@keyframes spinner-border-animation {
-    to {
-        transform: rotate(360deg);
-    }
+/* ===== 页脚样式 ===== */
+footer {
+  background: var(--bg-secondary) !important;
+  border-top: 1px solid var(--border-subtle);
+  margin-top: var(--space-2xl) !important;
+  padding: var(--space-xl) 0 !important;
 }
+
 
 /* 结束指示器 */
 #end-indicator {
@@ -390,13 +398,13 @@ body {
 }
 
 /* 滚动条美化 */
+
 ::-webkit-scrollbar {
-    width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
+  background: var(--bg-secondary);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -430,4 +438,5 @@ body {
 /* 页脚样式 */
 footer {
     margin-top: 4rem;
+
 }

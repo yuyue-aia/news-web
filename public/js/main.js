@@ -306,5 +306,6 @@ async function fetchNews(page = 1, blogType = null) {
     }
 }
 
+
 // 全局函数，供HTML中的onclick使用
 window.toggleAISummary = toggleAISummary;
