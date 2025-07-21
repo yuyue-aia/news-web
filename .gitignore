@@ -3,6 +3,8 @@
 .1024
 .environments.yaml
 
+.history
+
 # Logs
 logs
 *.log
