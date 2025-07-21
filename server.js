@@ -42,7 +42,7 @@ async function connectDB() {
   }
 }
 
-// 首页路由 - 显示新闻列表（Feed流模式）
+// 首页路由 - 显示新闻列表（时间轴模式）
 app.get('/', async (req, res) => {
   try {
     const limit = 15; // 初始加载更多条目
@@ -56,8 +56,11 @@ app.get('/', async (req, res) => {
     const totalNews = await db.collection(COLLECTION_NAME).countDocuments();
     const hasMore = news.length === limit && totalNews > limit;
     
+    // 按日期分组新闻
+    const newsGroupedByDate = groupNewsByDate(news);
+    
     res.render('index', {
-      news,
+      newsGroupedByDate,
       hasMore,
       totalNews,
       moment
@@ -67,6 +70,28 @@ app.get('/', async (req, res) => {
     res.status(500).render('error', { message: '服务器错误' });
   }
 });
+
+// 按日期分组新闻的辅助函数
+function groupNewsByDate(news) {
+  const grouped = {};
+  
+  news.forEach(article => {
+    const dateKey = moment(article.publish_date).format('MM-DD');
+    if (!grouped[dateKey]) {
+      grouped[dateKey] = {
+        date: dateKey,
+        fullDate: moment(article.publish_date).format('YYYY-MM-DD'),
+        articles: []
+      };
+    }
+    grouped[dateKey].articles.push(article);
+  });
+  
+  // 转换为数组并按日期排序
+  return Object.values(grouped).sort((a, b) => 
+    moment(b.fullDate).valueOf() - moment(a.fullDate).valueOf()
+  );
+}
 
 
 
@@ -108,7 +133,7 @@ app.get('/api/news', async (req, res) => {
   }
 });
 
-// API路由 - Feed流无限滚动加载
+// API路由 - Feed流无限滚动加载（时间轴模式）
 app.get('/api/news/feed', async (req, res) => {
   try {
     const offset = parseInt(req.query.offset) || 0;
@@ -130,9 +155,12 @@ app.get('/api/news/feed', async (req, res) => {
     const total = await db.collection(COLLECTION_NAME).countDocuments(query);
     const hasMore = (offset + news.length) < total;
     
+    // 按日期分组新闻
+    const newsGroupedByDate = groupNewsByDate(news);
+    
     res.json({
       success: true,
-      data: news,
+      data: newsGroupedByDate,
       hasMore,
       total,
       nextOffset: offset + news.length
@@ -145,41 +173,7 @@ app.get('/api/news/feed', async (req, res) => {
 
 
 
-// 代理路由 - 用于在iframe中展示原始文章内容
-app.get('/proxy', async (req, res) => {
-  try {
-    const url = req.query.url;
-    
-    if (!url) {
-      return res.status(400).send('URL参数缺失');
-    }
-    
-    // 使用node-fetch获取原始内容
-    const fetch = require('node-fetch');
-    const response = await fetch(url);
-    const contentType = response.headers.get('content-type');
-    
-    // 设置相同的内容类型
-    res.setHeader('Content-Type', contentType);
-    
-    // 转发原始内容
-    const content = await response.text();
-    res.send(content);
-  } catch (error) {
-    console.error('代理请求失败:', error);
-    res.status(500).send(`
-      <html>
-        <body>
-          <div style="text-align: center; padding: 50px;">
-            <h3>无法加载原始内容</h3>
-            <p>可能是由于跨域限制或网站禁止在iframe中展示。</p>
-            <p>请尝试直接访问: <a href="${req.query.url}" target="_blank">${req.query.url}</a></p>
-          </div>
-        </body>
-      </html>
-    `);
-  }
-});
+// 原代理路由已删除 - 不再支持iframe展示原文
 
 // 启动服务器
 async function startServer() {
